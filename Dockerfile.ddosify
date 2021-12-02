@@ -20,9 +20,11 @@ RUN sed -i 's/https/http/' /etc/apk/repositories
 # Adding shadow package to install necessary commands in order to create users
 RUN \
 	apk --update --no-cache add shadow \
+		jq \
 	&& useradd -u $user_id -c "$user_name System Account" -U -m $user_name
 
-COPY --from=build-env /src/output/linux/amd64/bin/ddosify /app/bin
+COPY --from=build-env /src/output/linux/amd64/bin/ddosify /app/bin/ddosify
+COPY --from=build-env /src/scripts/loadtest.sh /app/bin/loadtest.sh
 
 RUN chown 42925 -R /app
 
@@ -31,6 +33,6 @@ WORKDIR /app
 USER $user_id
 
 # executable
-ENTRYPOINT [ "/app/bin/ddosify" ]
+ENTRYPOINT [ "/bin/sh"]
 # arguments that can be overridden
-CMD ["--help"]
+CMD ["-c", "exec /bin/sh -c \"trap : TERM INT; sleep infinity & wait\""]
